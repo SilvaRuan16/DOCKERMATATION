@@ -1,13 +1,38 @@
-# Multiplataforma (Flutter)
+# Multiplataforma (Dart e Flutter)
 
 * ## Docker para Desenvolvimento CLI
 
   Este tópico mostra o processo de utilizar um container docker para utilizar ferramentas Multiplataforma sem precisar instalar na máquina física.
 
-  Para rodar comandos do Flutter
+* ### Rodar o docker do flutter <br>
   `alias d-flutter='docker run -it --rm -v "$(pwd)":/app -w /app instrumentisto/flutter:stable flutter'` <br>
-  Para rodar comandos específicos do Dart
+
+  #### Explicação do comando
+| TRECHO                                  | FUNÇÃO                                                                                                                                                       |
+| :---                                    | :---                                                                                                                                                         |
+| `alias d-flutter=`                      | Define o nome do atalho. Ao digitar d-flutter no terminal, ele irá executar todo o código entre aspas.                                                       |
+| `docker run`                            | Comando básico do Docker para criar e iniciar um novo container.                                                                                             |
+| `-it`                                   | Abreviação de -i (interativo) e -t (tty). Permite interação com o processo dentro do container.                                                              |
+| `--rm`                                  | Remove o container assim que o comando terminar de ser executado.                                                                                            |
+| `-v "$(pwd)":/app`                      | Cria um volume. Ele mapeia sua pasta atual na máquina física para a pasta /app dentro do container. Assim, o código escrito na máquina aparece no container. |
+| `-w /app`                               | Define o Working Directory. Inicia a execução do Docker já dentro da pasta /app.                                                                             |
+| `instrumentisto/flutter:stable`         | Imagem que será utilizada (Não oficial). O Docker vai baixar esse ambiente pré-configurado com o Flutter estável instalado.                                  |
+| `flutter`                               | É o comando final que será executado dentro do container.                                                                                                    |
+
+* ### Rodar o docker do dart puro (Operações específicas) <br>
   `alias d-dart='docker run -it --rm -v "$(pwd)":/app -w /app instrumentisto/flutter:stable dart'`
+
+  #### Explicação do comando
+| TRECHO                          | FUNÇÃO                                                                                                            |
+| :---                            | :---                                                                                                              |
+| `alias d-dart`                  | Cria o apelido d-dart. Sempre que executar o Dart via Docker, usará esse comando.                                 |
+| `docker run`                    | Inicia a criação de um novo container.                                                                            |
+| `-it`                           | Permite que você veja a saída do terminal e digite comandos.                                                      |
+| `--rm`                          | Autolimpeza, garante que o container seja deletado depois do uso.                                                 |
+| `-v "$(pwd)":/app`              | Conecta a pasta atual ao diretório /app dentro do Docker.                                                         |
+| `-w /app`                       | Define que o terminal do Docker já deve nascer dentro da pasta /app.                                              |
+| `instrumentisto/flutter:stable` | É a imagem que será utilizada. O Docker vai baixar esse ambiente pré-configurado com o Flutter estável instalado. |
+| `dart`                          | Diz ao container para chamar o executável dart.                                                                   |
 
   ### Como usar?
   * #### Criar um projeto
