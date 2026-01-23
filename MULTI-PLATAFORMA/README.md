@@ -1,97 +1,120 @@
 # Multiplataforma (Dart e Flutter)
+Este guia documenta o processo de utilização de um container docker para isolar o ambiente de desenvolvimento, permitindo criar, testar e buildar sem precisar instalar as ferramentas na máquina física.
 
-* ## Docker para Desenvolvimento CLI
+## 1. Configuração do Ambiente CLI (Aliases)
+Será criada uma alias para criar um apelido ao comando e facilitar o uso no terminal (`.bashrc` ou `zshrc`).
+Obs: Será utilizada a imagem (NÃO OFICIAL) cirrusci/flutter:stable por ser a mais estável e mantida para ambientes de CI/CD e Docker.
+```
+# Responsável por executar comandos do Flutter com o seu usuário atual para evitar problemas de permissão
+alias d-flutter='docker run -it --rm -u $(id -u):$(id -g) -e HOME=/tmp -v "$(pwd)":/app -w /app cirrusci/flutter:stable bash -c "git config --global --add safe.directory /sdks/flutter && flutter \$@"'
 
-  Este tópico mostra o processo de utilizar um container docker para utilizar ferramentas Multiplataforma sem precisar instalar na máquina física.
+# Executa comandos puramente Dart
+alias d-dart='docker run -it --rm -u $(id -u):$(id -g) -v "$(pwd)":/app -w /app cirrusci/flutter:stable dart'
 
-* ### Rodar o docker do flutter <br>
-  `alias d-flutter='docker run -it --rm -v "$(pwd)":/app -w /app instrumentisto/flutter:stable flutter'` <br>
+# Abre um terminal interativo (Bash) dentro do ambiente Flutter
+alias d-shell='docker run -it --rm -u $(id -u):$(id -g) -v "$(pwd)":/app -w /app cirrusci/flutter:stable bash'
+```
+Explicação do principais parâmetros:
+* `-u $(id -u):$(id -g)`: Faz com que os arquivos criados pelo Docker pertença ao seu usuário da máquina e não ao root do container.
+* `-v "$(pwd)":/app`: Faz o mapeamento da pasta atual da sua máquina para o diretório /app do container.
+* `--rm`: Garante que o container seja deletado ao finalizar o comando, economizando espaço em disco.
 
-  #### Explicação do comando
-| TRECHO                                  | FUNÇÃO                                                                                                                                                       |
-| :---                                    | :---                                                                                                                                                         |
-| `alias d-flutter=`                      | Define o nome do atalho. Ao digitar d-flutter no terminal, ele irá executar todo o código entre aspas.                                                       |
-| `docker run`                            | Comando básico do Docker para criar e iniciar um novo container.                                                                                             |
-| `-it`                                   | Abreviação de -i (interativo) e -t (tty). Permite interação com o processo dentro do container.                                                              |
-| `--rm`                                  | Remove o container assim que o comando terminar de ser executado.                                                                                            |
-| `-v "$(pwd)":/app`                      | Cria um volume. Ele mapeia sua pasta atual na máquina física para a pasta /app dentro do container. Assim, o código escrito na máquina aparece no container. |
-| `-w /app`                               | Define o Working Directory. Inicia a execução do Docker já dentro da pasta /app.                                                                             |
-| `instrumentisto/flutter:stable`         | Imagem que será utilizada (Não oficial). O Docker vai baixar esse ambiente pré-configurado com o Flutter estável instalado.                                  |
-| `flutter`                               | É o comando final que será executado dentro do container.                                                                                                    |
+## 2. Desenvolvendo com VS Code (Extensão: Dev Containers)
+É recomendado instalar a extensão `Dev Containers` para ter acesso a suporte da IDE (Autocomplete, Refatoração e Linting).
 
-* ### Rodar o docker do dart puro (Operações específicas) <br>
-  `alias d-dart='docker run -it --rm -v "$(pwd)":/app -w /app instrumentisto/flutter:stable dart'`
+### Configuração do Projeto
+* #### 1. Crie uma pasta chamada `.devcontainer` na raiz do seu projeto.
+* #### 2. Crie o arquivo `devcontainer.json`.
+* #### 3. Coloque este código abaixo dentro do arquivo `devcontainer.json`:
+```
+{
+  "name": "Flutter Docker Environment",
+  "image": "cirrusci/flutter:stable",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dart-code.flutter",
+        "dart-code.dart-code"
+      ]
+    }
+  },
+  "remoteUser": "root",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind"
+  ]
+}
+```
+### Como utilizar:
+* Abra o projeto no Vs Code.
+* Clique no ícone da extensão do `Dev Containers` e selecione "Reopen in Container".
+* Vs Code agora opera de dentro do container com todas as ferramentas instaladas.
 
-  #### Explicação do comando
-| TRECHO                          | FUNÇÃO                                                                                                            |
-| :---                            | :---                                                                                                              |
-| `alias d-dart`                  | Cria o apelido d-dart. Sempre que executar o Dart via Docker, usará esse comando.                                 |
-| `docker run`                    | Inicia a criação de um novo container.                                                                            |
-| `-it`                           | Permite que você veja a saída do terminal e digite comandos.                                                      |
-| `--rm`                          | Autolimpeza, garante que o container seja deletado depois do uso.                                                 |
-| `-v "$(pwd)":/app`              | Conecta a pasta atual ao diretório /app dentro do Docker.                                                         |
-| `-w /app`                       | Define que o terminal do Docker já deve nascer dentro da pasta /app.                                              |
-| `instrumentisto/flutter:stable` | É a imagem que será utilizada. O Docker vai baixar esse ambiente pré-configurado com o Flutter estável instalado. |
-| `dart`                          | Diz ao container para chamar o executável dart.                                                                   |
+## 3. Comandos de Gerenciamento e Uso
+| Ação | Comando |
+| :--- | :--- |
+| Criar novo app | `d-flutter create <nome_do_app>` |
+| Baixar dependências | `d-flutter pub get` |
+| Limpar build/cache | `d-flutter clean` |
+| Verificar saúde do SDK | `d-flutter doctor` |
+| Corrigir permissões | `sudo chown -R $USER:$USER .` |
 
-  ### Como usar?
-  * #### Criar um projeto
-    `d-flutter create meu_app`
-  * #### Baixar pacotes
-    `d-flutter pub get`
-  * #### Rodar testes
-    `flutter test`
-  * #### Analisar código
-    `d-flutter analyze`
+## 4. Rodando o App (Flutter WEB)
+Por o Docker criar container de forma isolada, a visualização precisará ser feita via Web Server. <br>
+`docker run -it --rm -p 8080:8080 -v "$(pwd)":/app -w /app cirrusci/flutter:stable flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080`. <br>
+Após executar o comando anterior, acesse em seu navegador: `http://localhost:8080`
 
-* ## Docker para Produção
+## 5. Docker para para Produção (Dockerfile)
+Este Dockerfile foi adaptado para gerar builds leves utilizando Multi-stage Build. Obs: Estes comentários são para explicar o passo a passo, mas pode ficar a vontade para remove-los. Todo comentário começa com este símbolo (`#`)
 
-  Este tópico mostra o processo de utilizar um container docker para buildar e rodar seu projeto através de um Dockerfile.
-
-  * Criação do arquivo Dockerfile
-    ```
-    ############################
-    #  STAGE-1: BUILD PROCESS  #
-    ############################
+```
+############################
+#  STAGE-1: BUILD PROCESS  #
+############################
 
 
-    # Define a imagem base
-    # Flutter e Dart instalados
-    # Atribui apelido 'build' para captura de dados
-    FROM instrumentisto/flutter:stable AS build
+# Define a imagem base
+# Flutter e Dart instalados
+# Atribui apelido 'build' para captura de dados
+FROM cirrusci/flutter:stable AS build
 
-    # Cria e entra na pasta /app dentro do container
-    # Todas as atividades acontecerão neste diretório
-    WORKDIR /app
+# Cria e entra na pasta /app dentro do container
+# Todas as atividades acontecerão neste diretório
+WORKDIR /app
 
-    # Copia todos os arquivos onde está o Dockerfile
-    # Move para dentro da pasta /app do container
-    COPY . .
+# Copia todos os arquivos onde está o Dockerfile
+# Move para dentro da pasta /app do container
+COPY . .
 
-    # Baixa as dependências do projeto
-    # Compila o app para a plataforma web
-    # Resultado gerado em build/web
-    RUN flutter pub get && flutter build web
+# Baixa as dependências do projeto
+# Compila o app para a plataforma web
+# Resultado gerado em build/web
+RUN flutter pub get && flutter build web
 
-    #############################
-    #  STAGE-2: RUNNER PROCESS  #
-    #############################
+#############################
+#  STAGE-2: RUNNER PROCESS  #
+#############################
 
-    # Inicia uma imagem Nginx
-    # Servidor web
-    # Minimalista
-    FROM nginx:alpine
+# Inicia uma imagem Nginx
+# Servidor web
+# Minimalista
+FROM nginx:alpine
 
-    # Vai até o estágio anterior (--from=build)
-    # Pega apenas a pasta onde o site foi compilado
-    # Copia para a pasta padrão do Nginx
-    # Deixa o SDK do Flutter e o código-fonte para trás
-    COPY --from=build /app/build/web /usr/share/nginx/html
+# Vai até o estágio anterior (--from=build)
+# Pega apenas a pasta onde o site foi compilado
+# Copia para a pasta padrão do Nginx
+# Deixa o SDK do Flutter e o código-fonte para trás
+COPY --from=build /app/build/web /usr/share/nginx/html
 
-    # Informa a porta de conexão do container
-    EXPOSE 80
+# Informa a porta de conexão do container
+EXPOSE 80
 
-    # Define o comando que mantém o servidor rodando
-    # daemon off para que o container continue ativo
-    CMD ["nginx","-g","daemon off;"]
-    ```
+# Define o comando que mantém o servidor rodando
+# daemon off para que o container continue ativo
+CMD ["nginx","-g","daemon off;"]
+```
+
+## 6. Ciclo de Vida e Manutenção
+* Para containers travados: `docker stop $(docker ps -q)`.
+* Atualizar o Flutter: `docker pull cirrusci/flutter:stable`.
+* Limpar Lixo do Docker: `docker system prune` (remove containers parados e imagens sem uso).
