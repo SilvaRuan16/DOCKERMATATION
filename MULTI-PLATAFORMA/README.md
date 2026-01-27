@@ -56,7 +56,7 @@ Obs 2: Quando manipular o projeto dentro do container, você deverá executar `s
 ```
 {
   "name": "Flutter Dev Container",
-  "image": "cirrusci/flutter:3.38.6",
+  "image": "cirrusci/flutter:stable",
   "remoteUser": "root",
   "workspaceFolder": "/app",
   "mounts": [
@@ -110,7 +110,7 @@ Este Dockerfile foi adaptado para gerar builds leves utilizando Multi-stage Buil
 # Define a imagem base
 # Flutter e Dart instalados
 # Atribui apelido 'build' para captura de dados
-FROM cirrusci/flutter:3.38.6 AS build
+FROM cirrusci/flutter:stable AS build
 
 # Cria e entra na pasta /app dentro do container
 # Todas as atividades acontecerão neste diretório
