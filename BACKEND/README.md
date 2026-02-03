@@ -132,6 +132,10 @@ EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
 ```
+Obs: É necessário ter atenção em relação ao .mvnw, pois como a proposta desta documentação é fornecer os materiais de desenvolvimento tendo a máquina completamente limpa, certamente você não terá o Maven instalado. Será necessário verificar se estes arquivos estão no seu projeto (`mvnw`, `mvnw.cmd` e a pasta `.mvn`).
+<br><br>
+Se você não tiver esses arquivos, será possível rodar este comando abaixo para gera-los uma única vez usando o container de desenvolvimento. <br>
+`docker run -it --rm -v "$(pwd)":/app -w /app eclipse-temurin:21-jdk sh -c "apt update && apt install maven -y && mvn wrapper:wrapper"`
 
 ## Buildar e Rodar
 Navege até a raiz do seu projeto onde está o Dockerfile e execute este comando: <br>
@@ -146,3 +150,15 @@ Após o build terminar, você poderá subir o container usando o comando: <br>
 * `-d`: (Detached), roda o container em segundo plano para deixar o terminal livre para uso.
 * `-p 8080:8080`: Mapeia a porta 8080 da sua máquina física para a porta 8080 do container.
 * `--name app-execucao`: Atribui um nome ao container para facilitar o gerenciamento.
+
+Para testar, acesse o seu `http://localhost:8080`.
+
+| Ação | Comando |
+| :--- | :--- |
+| Listar ativos | `docker ps` |
+| Ver os logs do app | `docker logs -f <nome_do_container>` |
+| Parar o app | `docker stop <nome_do_container>` |
+| Iniciar novamente | `docker start <nome_do_container>` |
+| Remover o container | `docker rm -f <nome_do_container>` |
+
+Se o comando de build falhar no estágio do RUN ./mvnw, pode ser por falta de permissões de execução do arquivo. Copie este trecho abaixo e coloque no Dockerfile antes do primeiro RUN: `RUN chmod +x mvnw`
