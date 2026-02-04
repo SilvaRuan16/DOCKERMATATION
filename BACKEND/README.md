@@ -9,7 +9,7 @@ Será criada uma função para facilitar a execução dos programas no terminal 
 ```
 # Função para utilizar no dia a dia
 d-java() {
-  docker run -it --rm -v "$(pwd)":/app -v "$HOME/.m2":/root/.m2 -w /app eclipse-temurin:21-jdk bash
+  docker run -it --rm -v "$(pwd)":/app -v "$HOME/.m2":/root/.m2 -w /app maven:3.9-eclipse-temurin-21 bash
 }
 ```
 ### Explicação dos trechos do comando docker:
@@ -22,6 +22,29 @@ d-java() {
 
 Após isso, você poderá executar esse comando toda vez que for escrito `d-java`.
 
+## Criar projeto
+Para criar um projeto Java utilizando o Maven, você poderá seguir de duas formas: <br>
+* ### Opção 1. Criar o projeto de dentro do container
+  Se você já inseriu este método no terminal `d-java`, será necessário seguir alguns passos: <br>
+  1. Entre na pasta onde quer o projeto.
+  2. Digite `d-java` para entrar no container.
+  3. No prompt do container, execute este comando: `mvn archetype:generate -DgroupId=com.meuprojeto -DartifactId=minha-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false`
+
+* ### Opção 2. Criar uma função especifica para gerar projetos
+  Como forma de resumir a opção A, você poderá apenas criar uma função que será responsável pela criação do projeto diretamente (Será necessário adicionar esta função no `.bashrc` ou `.zshrc`).
+
+  ```
+  d-java-init() {
+  docker run -it --rm \
+    -v "$(pwd)":/app \
+    -w /app \
+    maven:3.9-eclipse-temurin-21 \
+    mvn archetype:generate -DgroupId=com.exemplo -DartifactId="$1" -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+  }
+  ```
+Forma de uso: `d-java-init meu-novo-projeto`. <br>
+Este comando será responsavel por criar a pasta meu-novo-projeto com toda estrutura Maven (src/main/java, pom.xml, etc) sem que você precise baixar as ferramentas em sua máquina física.
+
 ## Ciclo de vida Básico
 Caso você queira um melhor gerenciamento sobre o seu container, será necessário remover a flag `--rm` e inserir uma nova flag `--name` para ganhar mais controle sobre o container.
 
@@ -33,6 +56,8 @@ Caso você queira um melhor gerenciamento sobre o seu container, será necessár
 | `docker start <nome_ou_id>` | Reinicia um container que foi parado. |
 | `docker restart <nome_ou_id>` | Para e inicia novamente (útil se o Java travar). |
 | `docker rm <nome_ou_id>` | Remove o container permanentemente do disco. |
+| `docker logs -f <nome_do_container>` | Ver os logs do app |
+| `docker rm -f <nome_do_container>` | Remover o container |
 
 ## Comandos de Inspeção e Uso
 Possui casos onde mesmo o container sendo executado em segundo plano usando a flag `-d`, será preciso interagir com o mesmo.
@@ -152,13 +177,5 @@ Após o build terminar, você poderá subir o container usando o comando: <br>
 * `--name app-execucao`: Atribui um nome ao container para facilitar o gerenciamento.
 
 Para testar, acesse o seu `http://localhost:8080`.
-
-| Ação | Comando |
-| :--- | :--- |
-| Listar ativos | `docker ps` |
-| Ver os logs do app | `docker logs -f <nome_do_container>` |
-| Parar o app | `docker stop <nome_do_container>` |
-| Iniciar novamente | `docker start <nome_do_container>` |
-| Remover o container | `docker rm -f <nome_do_container>` |
 
 Se o comando de build falhar no estágio do RUN ./mvnw, pode ser por falta de permissões de execução do arquivo. Copie este trecho abaixo e coloque no Dockerfile antes do primeiro RUN: `RUN chmod +x mvnw`
