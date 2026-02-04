@@ -9,41 +9,86 @@ Será criada uma função para facilitar a execução dos programas no terminal 
 ```
 # Função para utilizar no dia a dia
 d-java() {
-  docker run -it --rm -v "$(pwd)":/app -v "$HOME/.m2":/root/.m2 -w /app maven:3.9-eclipse-temurin-21 bash
+  docker run -it --rm \
+  -v "$(pwd)":/app \
+  -v "$HOME/.m2":/root/.m2 \
+  -w /app \
+  maven:3.9-eclipse-temurin-21 bash
+}
+
+# Método para criar um projeto Java puro com Maven
+d-jamaven-init() {
+  docker run -it --rm \
+    -v "$(pwd)":/app \
+    -w /app \
+    maven:3.9-eclipse-temurin-21 \
+    mvn archetype:generate \
+    -DgroupId=com.meuprojeto \
+    -DartifactId="$1" \
+    -DarchetypeArtifactId=maven-archetype-quickstart \
+    -DinteractiveMode=false
+}
+
+# Método para criar um projeto Java com Spring Boot
+d-javaspring-init() {
+  docker run -it --rm \
+  -v "$(pwd)":/app \
+  -w /app \
+  alpine:latest \
+  sh -c "apk add --no-cache curl unzip && \
+  curl https://start.spring.io/starter.zip \
+  -d javaVersion=21 \
+  -d type=maven-project \
+  -d name=$1 \
+  -d artifactId=$1 \
+  -o project.zip && \
+  unzip project.zip -d $1 && \
+  rm project.zip"
 }
 ```
 ### Explicação dos trechos do comando docker:
+#### `d-java`
 * `-it`: Mantém o terminal interativo para utilizar o bash.
 * `--rm`: Remove o container de forma automática assim que o usuário sair dele, mantendo o seu sistema limpo.
 * `-v "$(pwd)":/app`: Monta sua pasta atual no diretório `/app` do contaiener.
 * `-v "$HOME/.m2":/root/.m2`: Compartilha o cache do maven para não precisar baixar todas as dependências do zero todas as vezes.
 * `-w /app`: Define o diretório de trabalho inicial como `/app`.
-* `eclipse-temurin:21-jdk`: Utiliza uma imagem oficial do OpenJDK 21 pela distribuição Temurin.
+* `maven:3.9-eclipse-temurin-21`: Utiliza uma imagem oficial do OpenJDK 21 com o pacote Maven.
 
 Após isso, você poderá executar esse comando toda vez que for escrito `d-java`.
 
-## Criar projeto
-Para criar um projeto Java utilizando o Maven, você poderá seguir de duas formas: <br>
-* ### Opção 1. Criar o projeto de dentro do container
-  Se você já inseriu este método no terminal `d-java`, será necessário seguir alguns passos: <br>
-  1. Entre na pasta onde quer o projeto.
-  2. Digite `d-java` para entrar no container.
-  3. No prompt do container, execute este comando: `mvn archetype:generate -DgroupId=com.meuprojeto -DartifactId=minha-app -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false`
+#### `d-jamaven-init`
+* `docker run -it --rm`: Executa o docker abrindo um terminal no modo interativo e garante que o container seja deletado após terminar de gerar o projeto, para garantir que não fique com containers "mortos" na máquina física.
+* `-v "$(pwd)":/app`: Conecta sua pasta atual da máquina fisica ao diretório `/app` dentro do container.
+* `-w /app`: Define que os comandos serão executados dentro da pasta `/app`.
+* `maven:3.9-eclipse-temurin-21`: Imagem oficial que contém o Maven na versão `3.9` e o Java `21 (Temurin)`.
+* `mvn archetype:generate`: Responsável por criar uma planta baixa do projeto:
+  * `archetype:generate`: É o plugin do Maven que gera projetos a partir de modelos arquétipos.
+  * `-DgroupId=com.meuprojeto`: Define o RG da sua organização ou pacote principal. Ex: `com.google`, `org.apache`.
+  * `-DartifactId="$1"`: Define o nome do projeto/pasta capturando o primeiro nome digitado após o comando. Ex: `d-jamaven-init meu-app`.
+  * `-DarchetypeArtifactId=maven-archetype-quickstart`: Seleciona o modelo Quickstart, que cria a estrutura básica:
+    * `src/main/java`: Para o código.
+    * `src/test/java`: Para o testes.
+    * `pom.xml`: Gerenciador de dependências do projeto.
+  * `-DinteractiveMode=false`: Impede que o Maven fique fazendo perguntas durante a criação do projeto. Assume os valores padrão e termina o trabalho sozinho.
 
-* ### Opção 2. Criar uma função especifica para gerar projetos
-  Como forma de resumir a opção A, você poderá apenas criar uma função que será responsável pela criação do projeto diretamente (Será necessário adicionar esta função no `.bashrc` ou `.zshrc`).
+Após isso, você poderá criar projetos utilizando `d-jamaven-init meu-projeto-estudo`.
 
-  ```
-  d-java-init() {
-  docker run -it --rm \
-    -v "$(pwd)":/app \
-    -w /app \
-    maven:3.9-eclipse-temurin-21 \
-    mvn archetype:generate -DgroupId=com.exemplo -DartifactId="$1" -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
-  }
-  ```
-Forma de uso: `d-java-init meu-novo-projeto`. <br>
-Este comando será responsavel por criar a pasta meu-novo-projeto com toda estrutura Maven (src/main/java, pom.xml, etc) sem que você precise baixar as ferramentas em sua máquina física.
+#### `d-javaspring-init`
+* `docker run -it --rm`: Executa o docker abrindo um terminal no modo interativo e garante que o container seja deletado após terminar de gerar o projeto, para garantir que não fique com containers "mortos" na máquina física.
+* `-v "$(pwd)":/app`: Conecta sua pasta atual da máquina fisica ao diretório `/app` dentro do container.
+* `-w /app`: Define que os comandos serão executados dentro da pasta `/app`.
+* `alpine:latest`: Usa uma imagem extremamente leve da Alpine Linux para fazer uma assistencia no download e extração do projeto.
+* `sh -c`: A imagem do Alpine é minimalista, portanto não possui ferramentas de rede por padrão.
+* `apk add --no-cache curl unzip`: É feito feito a instalação do `curl` e `unzip` pelo gerenciador de pacotes do Alpine (apk). A flag `--no-cache` serve para evitar acúmulo de arquivos temporários de instalação.
+* `https://start.spring.io/starter.zip`: Endpoint que gera o arquivo .zip do projeto.
+* `-d javaVersion=21`: Informa que será usado o Java 21 no projeto, esta informação fica armazenada no `pom.xml`.
+* `-d type=maven-project`: Utiliza a estrutura de projeto Maven.
+* `-d nome=$1` e `-d artifactId=$1`: Utiliza o nome passado no argumento para nomear o projeto quando chama a função `d-javaspring-init`. Ex: `d-javaspring-init meu-projeto`.
+* `-o project.zip`: Salva o arquivo baixado com o nome temporário project.zip.
+* `unzip project.zip -d $1`: Extrai todo o conteúdo do arquivo baixado para uma nova pasta com o nome do seu projeto.
+* `rm project.zip`: Remove o arquivo compactado para não deixar lixo na pasta.
+
 
 ## Ciclo de vida Básico
 Caso você queira um melhor gerenciamento sobre o seu container, será necessário remover a flag `--rm` e inserir uma nova flag `--name` para ganhar mais controle sobre o container.
