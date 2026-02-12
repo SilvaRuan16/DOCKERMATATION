@@ -130,7 +130,7 @@ No conteúdo mostrado logo acima, foi fornecido o ambiente de desenvolvimento Ja
 {
   "name": "Java 21 Dev Container",
   "image": "mcr.microsoft.com/devcontainers/java:21-eclipse-temurin",
-  "remoteUser": "vscode",
+  "remoteUser": "root",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "mounts": [
     "source=${localEnv:HOME}/.m2,target=/home/vscode/.m2,type=bind"
