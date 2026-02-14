@@ -36,6 +36,7 @@ Obs: Você pode usar a imagem docker via CLI para rodar alguma ferramenta que n�
 ---
 ## COMANDOS DE ACESSO AO BASH
 | Ação             | Comando                                    | Descrição                                         |
+| :---             | :---                                       | :---                                              |
 | Acessar Bash     | `docker exec -it <nome_do_container> bash` | Abre terminal interativo bash do container        |
 | Acessar SH       | `docker exec -it <nome_do_container> sh`   | Abre um terminal simples                          |
 | Sair do Terminal | `exit`                                     | Sai do modo interativo e volta para sua máquina   |
