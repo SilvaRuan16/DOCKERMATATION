@@ -89,33 +89,6 @@ Após isso, você poderá criar projetos utilizando `d-jamaven-init meu-projeto-
 * `unzip project.zip -d $1`: Extrai todo o conteúdo do arquivo baixado para uma nova pasta com o nome do seu projeto.
 * `rm project.zip`: Remove o arquivo compactado para não deixar lixo na pasta.
 
-
-## Ciclo de vida Básico
-Caso você queira um melhor gerenciamento sobre o seu container, será necessário remover a flag `--rm` e inserir uma nova flag `--name` para ganhar mais controle sobre o container.
-
-| Comandos | Ação |
-| :--- | :--- |
-| `docker ps` | Lista os containers ativos no momento. |
-| `docker ps -a` | Lista todos os containers e seus estados (Up, Exited). |
-| `docker stop <nome_ou_id>` | Para o container enviando um sinal de desligamento. |
-| `docker start <nome_ou_id>` | Reinicia um container que foi parado. |
-| `docker restart <nome_ou_id>` | Para e inicia novamente (útil se o Java travar). |
-| `docker rm <nome_ou_id>` | Remove o container permanentemente do disco. |
-| `docker logs -f <nome_do_container>` | Ver os logs do app |
-| `docker rm -f <nome_do_container>` | Remover o container |
-
-## Comandos de Inspeção e Uso
-Possui casos onde mesmo o container sendo executado em segundo plano usando a flag `-d`, será preciso interagir com o mesmo.
-
-### Executar comandos em um container que já está rodando
-Caso você queira abrir um terminal no container do Java, execute este comando: <br>
-`docker exec -it <nome_do_container> bash`
-
-### Ver os logs
-Recomendado para debugar aplicações Java que estão rodando por trás dos panos: <br>
-`docker logs -f <nome_do_container>` <br>
-Obs: A flag -f (follow) faz com que o terminal fique seguindo o log em tempo real.
-
 ## Dockerfile para aplicações em Java e Desenvolvendo com VS Code (Extensão: Dev Containers)
 No conteúdo mostrado logo acima, foi fornecido o ambiente de desenvolvimento Java sem ter essas ferramentas necessáriamente baixadas em sua máquina física. Agora será mostrado o passo a passo de como Buildar e Rodar uma aplicação Java atráves do Dockerfile.
 
@@ -129,7 +102,7 @@ No conteúdo mostrado logo acima, foi fornecido o ambiente de desenvolvimento Ja
 ```
 {
   "name": "Java 21 Dev Container",
-  "image": "mcr.microsoft.com/devcontainers/java:21-eclipse-temurin",
+  "image": "mcr.microsoft.com/devcontainers/java:21",
   "remoteUser": "root",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "mounts": [
@@ -152,9 +125,9 @@ No conteúdo mostrado logo acima, foi fornecido o ambiente de desenvolvimento Ja
         ]
       }
     }
-  },
-  "postCreateCommand": "sudo chown -R vscode:vscode /workspaces"
+  }
 }
+
 ```
 ### Como utilizar:
 * Abra o projeto no Vs Code ou no terminal fora do container, vá para o caminho do projeto espelhado e use o comando `code .` para abrir o vscode.
@@ -181,6 +154,10 @@ WORKDIR /build
 # Copia os arquivos de configuração do Maven/Gradle primeiro para otimizar cache
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
+
+# Atribui permissão de execução ao arquivo
+RUN chmod +x mvnw
+
 RUN ./mvnw dependency:go-offline
 
 # Copia o código fonte e gera o executável
@@ -211,16 +188,15 @@ Se você não tiver esses arquivos, será possível rodar este comando abaixo pa
 Navege até a raiz do seu projeto onde está o Dockerfile e execute este comando: <br>
 `docker build -t meu-app-java .`
 
+* `build`: Cria uma nova imagem a partir de um arquivo (Dockerfile).
 * `-t meu-app-java`: Atribui um nome (tag) para a imagem criada para que não precise gerenciar ela pelo o ID.
 * `.`: Indica que o contexto do build (arquivos src, pom.xml, outros) está na pasta atual.
 
 Após o build terminar, você poderá subir o container usando o comando: <br>
-`docker run -d -p 8080:8080 --name app-execucao meu-app-java`
+`docker run -it --rm --name app-terminal meu-app-java`
 
-* `-d`: (Detached), roda o container em segundo plano para deixar o terminal livre para uso.
-* `-p 8080:8080`: Mapeia a porta 8080 da sua máquina física para a porta 8080 do container.
-* `--name app-execucao`: Atribui um nome ao container para facilitar o gerenciamento.
-
-Para testar, acesse o seu `http://localhost:8080`.
-
-Se o comando de build falhar no estágio do RUN ./mvnw, pode ser por falta de permissões de execução do arquivo. Copie este trecho abaixo e coloque no Dockerfile antes do primeiro RUN: `RUN chmod +x mvnw`
+* `run`: Cria e inicia um container a partir de uma imagem.
+* `-it`: Cria um terminal interativo.
+* `--rm`: Deleta o container assim que encerrado.
+* `--name app-terminal`: Atribui um nome específico ao container rodando. Ex: Nome do container => `app-terminal`
+* `meu-app-java`: Indica a imagem que deve ser utilizada para criar o container.
