@@ -1,5 +1,5 @@
 # Ferramentas Dockerizadas para Backend
-Esta parte do guia mostrará como criar ambientes dockerizados para desenvolvimento, build e execução de suas aplicações, sendo as ferramentas mencionadas: Java e Python.
+Esta parte do guia mostrará como criar ambientes dockerizados para desenvolvimento, build e execução de suas aplicações, sendo as ferramentas mencionadas: Java, Python e Dart.
 
 ## Java
 Java é uma linguagem de programação orientada a objetos fortemente tipada, suas principais caracteristicas são sua segurança e robustez, desempenho, independente de plataforma e como mencionada anteriormente, orientação a objetos.
@@ -185,7 +185,58 @@ Se você não tiver esses arquivos, será possível rodar este comando abaixo pa
 `docker run -it --rm -v "$(pwd)":/app -w /app eclipse-temurin:21-jdk sh -c "apt update && apt install maven -y && mvn wrapper:wrapper"`
 
 ## Buildar e Rodar
-Navege até a raiz do seu projeto onde está o Dockerfile e execute este comando: <br>
+Antes de buildar e rodar a aplicação, será preciso atualizar o arquivo `pom.xml`, pois durante o processo de criação do projeto, foi configurado para gerar um template mais básico possivel padrão do Maven, oque resultou em conflitos entre o jdk-21 e outros parametros do arquivo. Para corrigir isto, basta substituir o pom.xml padrão que foi gerado por este novo arquivo: <br>
+```
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <groupId>com.meuprojeto</groupId>
+  <artifactId>dkjmaven</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <properties>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.10.0</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.3.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>com.meuprojeto.App</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+```
+Após fazer a alteração, navege até a raiz do seu projeto onde está o Dockerfile e execute este comando: <br>
 `docker build -t meu-app-java .`
 
 * `build`: Cria uma nova imagem a partir de um arquivo (Dockerfile).
